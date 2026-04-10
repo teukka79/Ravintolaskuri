@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyvinvointisovellus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-brand" id="app-brand">
+        <span class="material-symbols-outlined app-brand-icon-ms" id="app-brand-icon" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">restaurant</span>
+        <span class="app-brand-name" id="app-brand-name">Ravinto<em>laskuri</em></span>
+      </div>
+      <nav class="app-nav">
+        <button class="app-nav-btn active" data-app="ravinto">
+          <span class="material-symbols-outlined app-nav-icon-ms">restaurant</span>
+          Ravintolaskuri
+        </button>
+        <button class="app-nav-btn" data-app="treeni">
+          <span class="material-symbols-outlined app-nav-icon-ms" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;">exercise</span>
+          Treenipäiväkirja
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== RAVINTOLASKURI ===== -->
+  <div id="app-ravinto" class="app-view active">
+    <main class="rl-main">
+      <div class="rl-layout">
+
+        <!-- VASEN: Haku + lista / Ateriat -->
+        <section class="panel panel-left">
+          <!-- Panel header with toggle -->
+          <div class="panel-header">
+            <div class="left-panel-title">
+              <div class="lp-toggle" id="lpToggle">
+                <button class="lp-toggle-btn active" data-panel="ruoat">Ruoat</button>
+                <button class="lp-toggle-btn" data-panel="ateriat">Ateriat</button>
+              </div>
+            </div>
+            <!-- Ruoat actions -->
+            <div class="header-actions" id="ruoatActions">
+              <button class="btn-backup" id="backupBtn">💾 Varmuuskopio</button>
+              <label class="btn-restore">↩ Palauta
+                <input type="file" id="restoreInput" accept=".json" style="display:none" />
+              </label>
+              <button class="btn-add-new" id="openModalBtn">+ Lisää uusi</button>
+            </div>
+            <!-- Ateriat actions -->
+            <div class="header-actions" id="ateriatActions" style="display:none;">
+              <button class="btn-backup" id="ateriatBackupBtn">💾 Vie</button>
+              <label class="btn-restore">↩ Palauta
+                <input type="file" id="ateriatRestoreInput" accept=".json" style="display:none" />
+              </label>
+              <button class="btn-add-new" id="openMealTemplateBtn">+ Uusi ateria</button>
+            </div>
+          </div>
+
+          <!-- Ruoat view -->
+          <div id="ruoatView">
+            <div class="search-wrap">
+              <input type="text" id="searchInput" placeholder="Hae ruokaa…" autocomplete="off" />
+              <select id="categoryFilter"><option value="">Kaikki kategoriat</option></select>
+            </div>
+            <ul class="food-list" id="foodList"></ul>
+          </div>
+
+          <!-- Ateriat view -->
+          <div id="ateriatView" style="display:none;">
+            <ul class="food-list" id="mealTemplateList"></ul>
+          </div>
+        </section>
+
+        <!-- OIKEA: Ateriat + kalenteri + yhteenveto -->
+        <section class="panel panel-right">
+          <div class="panel-header">
+            <h2 id="rl-day-title">Päivän ateriat</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn-cal-toggle" id="btnCalToggle" title="Kalenteri">📅</button>
+              <button class="btn-clear" id="clearBtn">Tyhjennä</button>
+            </div>
+          </div>
+          <div class="rl-calendar" id="rlCalendar" style="display:none;">
+            <div class="rl-cal-header">
+              <button class="rl-cal-nav" id="calPrev">‹</button>
+              <span class="rl-cal-month" id="calMonthLabel"></span>
+              <button class="rl-cal-nav" id="calNext">›</button>
+            </div>
+            <div class="rl-cal-grid" id="calGrid"></div>
+          </div>
+          <div class="meal-groups" id="mealGroups">
+            <div class="meal-empty" id="mealEmpty">Lisää ruokia vasemmalta →</div>
+          </div>
+          <div class="summary-box" id="summaryBox">
+            <div class="summary-title">Yhteensä</div>
+            <div class="macro-grid" id="macroGrid"></div>
+            <div class="energy-bar-wrap">
+              <div class="energy-bar-label"><span>Energia</span><span id="energyTotal">0 kcal</span></div>
+              <div class="energy-bar"><div class="energy-bar-fill" id="energyFill"></div></div>
+              <div class="energy-goal-label">Tavoite: <span id="goalDisplay">2000</span> kcal</div>
+            </div>
+            <div class="goal-row">
+              <label for="goalInput">Muuta tavoite:</label>
+              <input type="number" id="goalInput" value="2000" min="500" max="5000" step="50" />
+              <span>kcal</span>
+            </div>
+            <div class="chart-section">
+              <div class="summary-title" style="margin-top:18px">Makrojakauma</div>
+              <div class="chart-wrap">
+                <svg id="macroChart" viewBox="0 0 220 220" width="180" height="180">
+                  <circle cx="110" cy="110" r="80" fill="#f5f2ec" />
+                  <g id="chartSlices"></g>
+                  <text id="chartCenter" x="110" y="106" text-anchor="middle" class="chart-center-val">–</text>
+                  <text x="110" y="124" text-anchor="middle" class="chart-center-lbl">kcal</text>
+                </svg>
+                <div class="chart-legend" id="chartLegend"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- MODAL: Lisää uusi ruoka -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Lisää uusi ruoka</h3>
+          <button class="modal-close" id="closeModalBtn">✕</button>
+        </div>
+        <form id="addFoodForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group full"><label>Nimi *</label><input type="text" id="f_nimi" placeholder="esim. Kaurapuuro" required /></div>
+            <div class="form-group full"><label>Kategoria *</label>
+              <input type="text" id="f_kategoria" placeholder="esim. Vilja" list="kategoriaList" autocomplete="off" required />
+              <datalist id="kategoriaList"></datalist>
+            </div>
+            <div class="form-group"><label>Energia (kcal)</label><input type="number" id="f_energia" placeholder="0" min="0" /></div>
+            <div class="form-group"><label>Proteiini (g)</label><input type="number" id="f_proteiini" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Hiilihydraatti (g)</label><input type="number" id="f_hiilihydraatti" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Rasva (g)</label><input type="number" id="f_rasva" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Tyydyttynyt rasva (g)</label><input type="number" id="f_tyydyttynyt" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Kuitu (g)</label><input type="number" id="f_kuitu" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Sokeri (g)</label><input type="number" id="f_sokeri" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Suola (g)</label><input type="number" id="f_suola" placeholder="0" min="0" step="0.01" /></div>
+            <div class="form-group full"><label>Kuvaus (vapaaehtoinen)</label>
+              <textarea id="f_muistiinpano" placeholder="esim. Täysjyväruisleipä on kuitupitoinen ja täyttävä…" rows="2" style="resize:vertical;"></textarea>
+            </div>
+            <div class="form-group full"><label>Terveyshyödyt (vapaaehtoinen)</label>
+              <textarea id="f_terveyshyodyt" placeholder="esim. Runsas kuitu tukee suoliston terveyttä…" rows="2" style="resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div class="form-note">* Arvot per 100 g</div>
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" id="cancelModalBtn">Peruuta</button>
+            <button type="submit" class="btn-save">Tallenna ruoka</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: Ruoan ravintoarvo-info (ⓘ food item) -->
+    <div class="modal-overlay" id="foodInfoOverlay">
+      <div class="modal modal-small nutrient-modal">
+        <div class="modal-header">
+          <div class="nutrient-modal-title">
+            <h3 id="fiTitle">Ruoka</h3>
+          </div>
+          <button class="modal-close" id="fíCloseBtn">✕</button>
+        </div>
+        <div class="nutrient-modal-body">
+          <p class="nutrient-desc" id="fiDesc"></p>
+          <div class="nutrient-section" id="fiBenefitsSection">
+            <div class="nutrient-section-title" id="fiBenefitsTitle">Terveyshyödyt</div>
+            <p class="nutrient-desc" id="fiBenefits" style="font-size:0.83rem;"></p>
+          </div>
+          <div class="nutrient-section">
+            <div class="nutrient-section-title">Ravintoarvot / 100 g</div>
+            <div class="nutrient-recs" id="fiRecs"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Uusi / muokkaa ateriapohjaa -->
+    <div class="modal-overlay" id="mealTemplateOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="mtModalTitle">Uusi ateria</h3>
+          <button class="modal-close" id="mtCloseBtn">✕</button>
+        </div>
+        <div class="tj-modal-body" style="padding:1.25rem;">
+          <label class="form-group" style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
+            <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Aterian nimi *</span>
+            <input type="text" id="mt_nimi" class="form-group input" placeholder="esim. Aamupalapohja" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-family:inherit;font-size:0.9rem;background:var(--bg);color:var(--text);outline:none;" />
+          </label>
+          <div style="font-size:0.78rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.5rem;">Raaka-aineet</div>
+          <div id="mtIngredientList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:0.75rem;"></div>
+          <button class="btn-clear" id="mtAddIngredientBtn" style="width:100%;margin-bottom:0.5rem;">+ Lisää raaka-aine</button>
+          <input type="hidden" id="mt_edit_id" />
+        </div>
+        <div class="form-actions" style="padding:14px 20px 20px;border-top:1px solid var(--border);">
+          <button type="button" class="btn-cancel" id="mtCancelBtn">Peruuta</button>
+          <button type="button" class="btn-save" id="mtSaveBtn">Tallenna ateria</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Annos + ateria -->
+    <div class="modal-overlay" id="portionOverlay">
+      <div class="modal modal-small">
+        <div class="modal-header">
+          <h3 id="portionTitle">Annoksen koko</h3>
+          <button class="modal-close" id="closePortionBtn">✕</button>
+        </div>
+        <div class="portion-body">
+          <label>Ateria</label>
+          <div class="meal-type-grid" id="mealTypeGrid">
+            <button class="meal-type-btn active" data-meal="Aamupala">🌅 Aamupala</button>
+            <button class="meal-type-btn" data-meal="Lounas">🍽 Lounas</button>
+            <button class="meal-type-btn" data-meal="Päivällinen">🌆 Päivällinen</button>
+            <button class="meal-type-btn" data-meal="Iltapala">🌙 Iltapala</button>
+            <button class="meal-type-btn" data-meal="Välipala">🍎 Välipala</button>
+            <button class="meal-type-btn" data-meal="Muu">✦ Muu</button>
+          </div>
+          <label style="margin-top:14px">Määrä (g)</label>
+          <div class="portion-input-row">
+            <input type="number" id="portionAmount" value="100" min="1" max="2000" step="10" />
+            <span>g</span>
+          </div>
+          <div class="portion-preview" id="portionPreview"></div>
+          <button class="btn-save full-width" id="confirmPortionBtn">Lisää aterialle</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Muokkaa ruokaa -->
+    <div class="modal-overlay" id="editFoodOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Muokkaa ruokaa</h3>
+          <button class="modal-close" id="closeEditFoodBtn">✕</button>
+        </div>
+        <form id="editFoodForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group full"><label>Nimi *</label><input type="text" id="ef_nimi" required /></div>
+            <div class="form-group full"><label>Kategoria *</label><input type="text" id="ef_kategoria" list="kategoriaList" autocomplete="off" required /></div>
+            <div class="form-group"><label>Energia (kcal)</label><input type="number" id="ef_energia" min="0" /></div>
+            <div class="form-group"><label>Proteiini (g)</label><input type="number" id="ef_proteiini" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Hiilihydraatti (g)</label><input type="number" id="ef_hiilihydraatti" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Rasva (g)</label><input type="number" id="ef_rasva" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Tyydyttynyt rasva (g)</label><input type="number" id="ef_tyydyttynyt" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Kuitu (g)</label><input type="number" id="ef_kuitu" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Sokeri (g)</label><input type="number" id="ef_sokeri" min="0" step="0.1" /></div>
+            <div class="form-group"><label>Suola (g)</label><input type="number" id="ef_suola" min="0" step="0.01" /></div>
+            <div class="form-group full"><label>Kuvaus</label>
+              <textarea id="ef_muistiinpano" placeholder="Ruoan kuvaus…" rows="2" style="resize:vertical;"></textarea>
+            </div>
+            <div class="form-group full"><label>Terveyshyödyt</label>
+              <textarea id="ef_terveyshyodyt" placeholder="esim. Runsas kuitu tukee suoliston terveyttä…" rows="2" style="resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div class="form-note">* Arvot per 100 g</div>
+          <input type="hidden" id="ef_id" />
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" id="cancelEditFoodBtn">Peruuta</button>
+            <button type="submit" class="btn-save">Tallenna muutokset</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: Ravintoaineinfo (ⓘ) -->
+    <div class="modal-overlay" id="nutrientInfoOverlay">
+      <div class="modal modal-small nutrient-modal">
+        <div class="modal-header">
+          <div class="nutrient-modal-title">
+            <span class="nutrient-modal-dot" id="niDot"></span>
+            <h3 id="niTitle">Ravintoaine</h3>
+          </div>
+          <button class="modal-close" id="niCloseBtn">✕</button>
+        </div>
+        <div class="nutrient-modal-body">
+          <p class="nutrient-desc" id="niDesc"></p>
+          <div class="nutrient-section">
+            <div class="nutrient-section-title">Terveyshyödyt</div>
+            <ul class="nutrient-benefits" id="niBenefits"></ul>
+          </div>
+          <div class="nutrient-section">
+            <div class="nutrient-section-title">Päivittäiset suositukset</div>
+            <div class="nutrient-recs" id="niRecs"></div>
+          </div>
+          <div class="nutrient-section" id="niExamplesSection">
+            <div class="nutrient-section-title">Hyviä lähteitä ruoissa</div>
+            <div class="nutrient-recs" id="niExamples"></div>
+          </div>
+          <div class="nutrient-note" id="niNote"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Valitse ateria (korvaa prompt) -->
+    <div class="modal-overlay" id="mealPickerOverlay">
+      <div class="modal modal-small">
+        <div class="modal-header">
+          <h3 id="mealPickerTitle">Mille aterialle?</h3>
+          <button class="modal-close" id="mealPickerCloseBtn">✕</button>
+        </div>
+        <div style="padding:1rem 1.25rem 1.25rem;display:flex;flex-direction:column;gap:8px;">
+          <button class="meal-picker-btn" data-meal="Aamupala">🌅 Aamupala</button>
+          <button class="meal-picker-btn" data-meal="Lounas">🍽 Lounas</button>
+          <button class="meal-picker-btn" data-meal="Päivällinen">🌆 Päivällinen</button>
+          <button class="meal-picker-btn" data-meal="Iltapala">🌙 Iltapala</button>
+          <button class="meal-picker-btn" data-meal="Välipala">🍎 Välipala</button>
+          <button class="meal-picker-btn" data-meal="Muu">✦ Muu</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div><!-- /app-ravinto -->
+
+
+  <!-- ===== TREENIPÄIVÄKIRJA ===== -->
+  <div id="app-treeni" class="app-view">
+    <div class="tj-inner">
+      <nav class="tj-tabs">
+        <button class="tj-tab active" data-tab="log">Treeni</button>
+        <button class="tj-tab" data-tab="programs">Ohjelmat</button>
+        <button class="tj-tab" data-tab="exercises">Liikkeet</button>
+        <button class="tj-tab" data-tab="bars">Tangot</button>
+        <button class="tj-tab" data-tab="history">Historia</button>
+        <div class="tj-tabs-actions">
+          <button class="btn-backup tj-backup" id="tjBackupBtn">↓ Vie</button>
+          <label class="btn-restore tj-restore">↑ Tuo
+            <input type="file" id="tjRestoreInput" accept=".json" style="display:none;" />
+          </label>
+        </div>
+      </nav>
+
+      <section class="tj-tab-content active" id="tj-tab-log">
+        <div class="tj-section-header">
+          <div><h2>Uusi treenisessio</h2><p class="tj-muted" id="tj-log-date"></p></div>
+          <div class="tj-btn-group">
+            <button class="btn-backup" id="tj-btn-load-program">↓ Ohjelma</button>
+            <button class="btn-add-new" id="tj-btn-add-set">+ Lisää liike</button>
+          </div>
+        </div>
+        <div id="tj-log-entries" class="tj-log-entries"></div>
+        <div class="tj-log-footer" id="tj-log-footer" style="display:none;">
+          <button class="tj-btn-save" id="tj-btn-save-workout">Tallenna treeni</button>
+        </div>
+      </section>
+
+      <section class="tj-tab-content" id="tj-tab-programs">
+        <div class="tj-section-header"><h2>Treeniohjelmat</h2><button class="btn-add-new" id="tj-btn-new-program">+ Uusi ohjelma</button></div>
+        <div id="tj-programs-list" class="tj-card-list"></div>
+      </section>
+
+      <section class="tj-tab-content" id="tj-tab-exercises">
+        <div class="tj-section-header"><h2>Liikkeet</h2><button class="btn-add-new" id="tj-btn-new-exercise">+ Uusi liike</button></div>
+        <div style="margin-bottom:0.75rem;">
+          <select id="tj-muscle-filter" class="tj-form-select" style="font-size:0.84rem;">
+            <option value="">Kaikki lihasryhmät</option>
+            <option>Rinta</option><option>Selkä</option><option>Jalat</option><option>Olkapäät</option>
+            <option>Hauikset</option><option>Ojentajat</option><option>Pakarat</option><option>Vatsa</option><option>Muu</option>
+          </select>
+        </div>
+        <div id="tj-exercises-list" class="tj-card-list"></div>
+      </section>
+
+      <section class="tj-tab-content" id="tj-tab-bars">
+        <div class="tj-section-header"><h2>Tangot &amp; painot</h2></div>
+        <div class="tj-bars-grid" id="tj-bars-grid"></div>
+      </section>
+
+      <section class="tj-tab-content" id="tj-tab-history">
+        <div class="tj-section-header"><h2>Treenithistoria</h2><button class="btn-backup tj-danger-btn" id="tj-btn-clear-history">Tyhjennä historia</button></div>
+        <div id="tj-history-list" class="tj-card-list"></div>
+      </section>
+    </div><!-- /tj-inner -->
+
+    <!-- TJ MODALS — inside app-treeni so selector works -->
+    <div class="modal-overlay" id="tj-modal-add-set">
+      <div class="modal modal-small">
+        <div class="modal-header"><h3>Lisää liike treeniin</h3><button class="modal-close" data-tj-close="tj-modal-add-set">✕</button></div>
+        <div class="tj-modal-body">
+          <label class="tj-form-label">Liike</label>
+          <select id="tj-set-exercise" class="tj-form-select"></select>
+          <div class="tj-set-row">
+            <div class="tj-form-group"><label class="tj-form-label">Sarjat</label>
+              <select id="tj-set-sets" class="tj-form-select">
+                <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+              </select>
+            </div>
+            <div class="tj-form-group"><label class="tj-form-label">Toistot</label>
+              <select id="tj-set-reps" class="tj-form-select">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6-8">6–8</option>
+                <option value="8-10" selected>8–10</option><option value="10-12">10–12</option>
+                <option value="12-15">12–15</option><option value="15-20">15–20</option>
+              </select>
+            </div>
+            <div class="tj-form-group">
+              <label class="tj-form-label">Paino (kg)</label>
+              <div id="tj-weight-section" style="display:block;">
+                <input type="number" id="tj-set-plates" class="tj-form-input" placeholder="0" min="0" step="0.5" />
+              </div>
+              <div id="tj-dumbbell-section" style="display:none;">
+                <input type="number" id="tj-set-dumbbell" class="tj-form-input" placeholder="0" min="0" step="0.5" />
+              </div>
+            </div>
+          </div>
+          <div class="tj-weight-breakdown" id="tj-weight-breakdown"></div>
+        </div>
+        <div class="tj-modal-footer">
+          <button class="btn-cancel" data-tj-close="tj-modal-add-set">Peruuta</button>
+          <button class="btn-save" id="tj-btn-confirm-set">Lisää</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tj-modal-exercise">
+      <div class="modal modal-small">
+        <div class="modal-header"><h3 id="tj-exercise-modal-title">Uusi liike</h3><button class="modal-close" data-tj-close="tj-modal-exercise">✕</button></div>
+        <div class="tj-modal-body">
+          <label class="tj-form-label">Liikkeen nimi</label>
+          <input type="text" id="tj-exercise-name" class="tj-form-input" placeholder="esim. Penkkipunnerrus" />
+          <label class="tj-form-label">Lihasryhmä</label>
+          <select id="tj-exercise-muscle" class="tj-form-select">
+            <option>Rinta</option><option>Selkä</option><option>Jalat</option><option>Olkapäät</option>
+            <option>Hauikset</option><option>Ojentajat</option><option>Pakarat</option><option>Vatsa</option><option>Muu</option>
+          </select>
+          <label class="tj-form-label">Tanko</label>
+          <select id="tj-exercise-bar" class="tj-form-select"></select>
+          <label class="tj-form-label">Talja</label>
+          <select id="tj-exercise-cable" class="tj-form-select">
+            <option value="none">Ei taljaa</option><option value="alatalja">Alatalja</option><option value="ylatalja">Ylätalja</option>
+          </select>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;">
+            <label class="tj-form-label" style="margin:0;">Käsipainot</label>
+            <div class="tj-toggle-group" id="tj-dumbbell-toggle">
+              <button type="button" class="tj-toggle-btn" data-val="yes">Kyllä</button>
+              <button type="button" class="tj-toggle-btn active" data-val="no">Ei</button>
+            </div>
+          </div>
+          <input type="hidden" id="tj-exercise-dumbbell" value="no" />
+          <input type="hidden" id="tj-exercise-edit-id" />
+        </div>
+        <div class="tj-modal-footer">
+          <button class="btn-cancel" data-tj-close="tj-modal-exercise">Peruuta</button>
+          <button class="btn-save" id="tj-btn-save-exercise">Tallenna</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tj-modal-program">
+      <div class="modal" style="max-width:460px;">
+        <div class="modal-header"><h3 id="tj-program-modal-title">Uusi ohjelma</h3><button class="modal-close" data-tj-close="tj-modal-program">✕</button></div>
+        <div class="tj-modal-body">
+          <label class="tj-form-label">Ohjelman nimi</label>
+          <input type="text" id="tj-program-name" class="tj-form-input" placeholder="esim. Rintapäivä A" />
+          <label class="tj-form-label" style="margin-top:1rem;">Liikkeet ohjelmassa</label>
+          <div id="tj-program-exercise-list" class="tj-prog-ex-list"></div>
+          <button class="tj-btn-add-ex" id="tj-btn-add-program-ex">+ Lisää liike ohjelmaan</button>
+          <input type="hidden" id="tj-program-edit-id" />
+        </div>
+        <div class="tj-modal-footer">
+          <button class="btn-cancel" data-tj-close="tj-modal-program">Peruuta</button>
+          <button class="btn-save" id="tj-btn-save-program">Tallenna ohjelma</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tj-modal-load-program">
+      <div class="modal modal-small">
+        <div class="modal-header"><h3>Lataa ohjelma</h3><button class="modal-close" data-tj-close="tj-modal-load-program">✕</button></div>
+        <div class="tj-modal-body">
+          <p class="tj-muted" style="margin-bottom:1rem;">Valitse ohjelma — kaikki liikkeet lisätään treeniin.</p>
+          <div id="tj-load-program-list" class="tj-card-list"></div>
+        </div>
+        <div class="tj-modal-footer"><button class="btn-cancel" data-tj-close="tj-modal-load-program">Peruuta</button></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tj-modal-history-detail">
+      <div class="modal">
+        <div class="modal-header"><h3 id="tj-history-detail-title">Treenisessio</h3><button class="modal-close" data-tj-close="tj-modal-history-detail">✕</button></div>
+        <div class="tj-modal-body" id="tj-history-detail-body"></div>
+        <div class="tj-modal-footer">
+          <button class="btn-cancel tj-danger-btn" id="tj-btn-delete-workout">Poista treeni</button>
+          <button class="btn-cancel" data-tj-close="tj-modal-history-detail">Sulje</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Muokkaa sarjat/toistot (badge click) -->
+    <div class="modal-overlay" id="tj-modal-edit-setsreps">
+      <div class="modal modal-small">
+        <div class="modal-header">
+          <h3 id="editSetsRepsTitle">Muokkaa</h3>
+          <button class="modal-close" id="editSetsRepsCloseBtn">✕</button>
+        </div>
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+          <div class="tj-form-row">
+            <div class="tj-form-group"><label class="tj-form-label">Sarjat</label>
+              <select id="editSets" class="tj-form-select">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+              </select>
+            </div>
+            <div class="tj-form-group"><label class="tj-form-label">Toistot</label>
+              <select id="editReps" class="tj-form-select">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6-8">6–8</option>
+                <option value="8-10">8–10</option><option value="10-12">10–12</option>
+                <option value="12-15">12–15</option><option value="15-20">15–20</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:0.75rem 1.25rem 1.25rem;">
+          <button class="btn-cancel" id="editSetsRepsCancelBtn">Peruuta</button>
+          <button class="btn-save" id="editSetsRepsSaveBtn">Tallenna</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app-treeni -->
+
+  <script src="nutrients.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

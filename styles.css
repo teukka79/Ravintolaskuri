@@ -259,7 +259,7 @@ body {
   padding: 9px 12px; font-family: inherit; font-size: 0.9rem;
   background: var(--bg); color: var(--text); outline: none; transition: border-color .2s;
 }
-.search-wrap input { flex: 1; }
+.search-wrap input { flex: 1 1 150px; }
 .search-wrap input:focus, .search-wrap select:focus { border-color: var(--accent); }
 
 /* Food list */

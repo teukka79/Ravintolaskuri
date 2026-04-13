@@ -255,6 +255,7 @@ body {
   padding: 14px 16px; border-bottom: 1px solid var(--border);
 }
 .search-wrap input, .search-wrap select {
+  flex: 1 1 100px; 
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 9px 12px; font-family: inherit; font-size: 0.9rem;
   background: var(--bg); color: var(--text); outline: none; transition: border-color .2s;

@@ -274,9 +274,17 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
   });
 
   // ── Portion modal ───────────────────────────────────────────
+  let portionMode = 'grams'; // 'grams' | 'pcs'
+
   function openPortion(food) {
     pendingFood = food;
     document.getElementById('portionTitle').textContent = food.nimi;
+    // Reset to grams mode
+    portionMode = 'grams';
+    document.getElementById('portionModeGrams').classList.add('active');
+    document.getElementById('portionModePcs').classList.remove('active');
+    document.getElementById('portionGramsSection').style.display = 'block';
+    document.getElementById('portionPcsSection').style.display = 'none';
     document.getElementById('portionAmount').value = 100;
     // Reset meal type buttons
     document.getElementById('mealTypeGrid').querySelectorAll('.meal-type-btn').forEach(b => {
@@ -286,17 +294,54 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
     document.getElementById('portionOverlay').classList.add('active');
   }
 
+  function getPortionGrams() {
+    if (portionMode === 'pcs') {
+      const w = parseFloat(document.getElementById('portionPcsWeight').value) || 0;
+      const c = parseFloat(document.getElementById('portionPcsCount').value)  || 1;
+      return w * c;
+    }
+    return parseFloat(document.getElementById('portionAmount').value) || 100;
+  }
+
   function updatePortionPreview() {
     const f = pendingFood; if (!f) return;
-    const g = parseFloat(document.getElementById('portionAmount').value) || 100;
+    const g = getPortionGrams();
     const r = v => round((v || 0) * g / 100);
+
+    // Update pcs total display
+    if (portionMode === 'pcs') {
+      const w = parseFloat(document.getElementById('portionPcsWeight').value) || 0;
+      const c = parseFloat(document.getElementById('portionPcsCount').value)  || 1;
+      document.getElementById('portionPcsTotal').textContent = `= ${w * c} g`;
+    }
+
     document.getElementById('portionPreview').innerHTML =
       `<strong>${g} g — ${r(f.energia)} kcal</strong><br>
        P ${r(f.proteiini)}g · H ${r(f.hiilihydraatti)}g · R ${r(f.rasva)}g<br>
        Kuitu ${r(f.kuitu)}g · Sokeri ${r(f.sokeri)}g · Suola ${r(f.suola)}g`;
   }
 
+  // Mode toggle
+  document.getElementById('portionModeGrams').addEventListener('click', () => {
+    portionMode = 'grams';
+    document.getElementById('portionModeGrams').classList.add('active');
+    document.getElementById('portionModePcs').classList.remove('active');
+    document.getElementById('portionGramsSection').style.display = 'block';
+    document.getElementById('portionPcsSection').style.display = 'none';
+    updatePortionPreview();
+  });
+  document.getElementById('portionModePcs').addEventListener('click', () => {
+    portionMode = 'pcs';
+    document.getElementById('portionModePcs').classList.add('active');
+    document.getElementById('portionModeGrams').classList.remove('active');
+    document.getElementById('portionGramsSection').style.display = 'none';
+    document.getElementById('portionPcsSection').style.display = 'block';
+    updatePortionPreview();
+  });
+
   document.getElementById('portionAmount').addEventListener('input', updatePortionPreview);
+  document.getElementById('portionPcsWeight').addEventListener('input', updatePortionPreview);
+  document.getElementById('portionPcsCount').addEventListener('input', updatePortionPreview);
 
   let selectedMeal = 'Aamupala';
   document.getElementById('mealTypeGrid').querySelectorAll('.meal-type-btn').forEach(btn => {
@@ -309,12 +354,22 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
 
   document.getElementById('confirmPortionBtn').addEventListener('click', () => {
     if (!pendingFood) return;
-    const g = parseFloat(document.getElementById('portionAmount').value) || 100;
+    const g = getPortionGrams();
+    if (!g || g <= 0) return;
     const r = v => round((v || 0) * g / 100);
+
+    // Build display name: include pcs info if in pcs mode
+    let displayName = pendingFood.nimi;
+    if (portionMode === 'pcs') {
+      const c = parseFloat(document.getElementById('portionPcsCount').value) || 1;
+      const w = parseFloat(document.getElementById('portionPcsWeight').value) || 0;
+      displayName = c > 1 ? `${pendingFood.nimi} (${c} kpl × ${w}g)` : `${pendingFood.nimi} (${w}g/kpl)`;
+    }
+
     const entry = {
       id: Date.now(),
       foodId: pendingFood.id,
-      name: pendingFood.nimi,
+      name: displayName,
       meal: selectedMeal,
       grams: g,
       energia:        r(pendingFood.energia),
@@ -1079,7 +1134,7 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
         <div class="tj-log-entry-header">
           <div>
             <div class="tj-log-entry-title">${ex.name}</div>
-            <div class="tj-log-entry-meta">${ex.muscle}${ (usesBar && bar) ? ' · ' + bar.name : ''}${ usesCable ? ' · ' + cLabel : ''}</div>
+            <div class="tj-log-entry-meta">${ex.muscle}${ (usesBar && bar) ? ' · ' + bar.name : ''}${ usesCable ? ' · ' + cLabel : ''}${ (!usesBar && !usesCable && ex.usesDumbbells) ? ' · Käsipainot' : ''}</div>
           </div>
           <button class="tj-btn-icon danger" data-rm="${idx}">✕</button>
         </div>
@@ -1090,7 +1145,7 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
           <div class="tj-badges" style="margin-top:6px;">
             <span class="tj-badge tj-badge-green tj-badge-clickable" data-edit-idx="${idx}" data-edit-field="sets">${entry.sets} sarjaa</span>
             <span class="tj-badge tj-badge-blue tj-badge-clickable" data-edit-idx="${idx}" data-edit-field="reps">${entry.reps} toistoa</span>
-            ${(usesBar || usesCable) ? `<span class="tj-badge tj-badge-amber tj-badge-weight" data-bidx="${idx}">${total} kg${usesBar && bar ? ' · ' + bar.name : ''}</span>` : ''}
+            ${(usesBar || usesCable || ex.usesDumbbells) ? `<span class="tj-badge tj-badge-amber tj-badge-weight" data-bidx="${idx}">${total} kg · ${usesBar && bar ? bar.name : (usesCable ? cLabel : 'Käsipainot')}</span>` : ''}
           </div>
         </div>`;
 
@@ -1183,13 +1238,14 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
       const bar      = getBar(ex.barId);
       const barLabel = hasBar(ex) ? (bar ? `${bar.name} (${bar.weight} kg)` : '—') : '';
       const cLabel   = hasCable(ex) ? cableLabel(ex) : '';
-      const equipParts = [barLabel, cLabel].filter(Boolean);
-      const equipLabel = equipParts.length ? equipParts.join(' + ') : 'Ei tankoa / taljaa';
+      const dbLabel  = ex.usesDumbbells ? 'Käsipainot' : '';
+      const equipParts = [barLabel, cLabel, dbLabel].filter(Boolean);
+      const equipLabel = equipParts.join(' + ');   // empty string if nothing → show only muscle
       const el = document.createElement('div'); el.className = 'tj-card';
       el.innerHTML = `
         <div class="tj-card-body">
           <div class="tj-card-title">${ex.name}</div>
-          <div class="tj-card-sub">${ex.muscle} · ${equipLabel}</div>
+          <div class="tj-card-sub">${ex.muscle}${equipLabel ? ' · ' + equipLabel : ''}</div>
         </div>
         <div class="tj-card-actions">
           <button class="tj-btn-icon" data-edit="${ex.id}">✎</button>

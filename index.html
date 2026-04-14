@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="fi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ravintolaskuri & Treenipäiväkirja</title>
+  <title>Hyvinvointisovellus</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
@@ -232,11 +232,42 @@
             <button class="meal-type-btn" data-meal="Välipala">🍎 Välipala</button>
             <button class="meal-type-btn" data-meal="Muu">✦ Muu</button>
           </div>
-          <label style="margin-top:14px">Määrä (g)</label>
-          <div class="portion-input-row">
-            <input type="number" id="portionAmount" value="100" min="1" max="2000" step="10" />
-            <span>g</span>
+          <!-- Mode toggle: grammat / kappaleet -->
+          <div class="portion-mode-toggle" style="margin-top:14px;">
+            <button class="portion-mode-btn active" id="portionModeGrams" type="button">g / paino</button>
+            <button class="portion-mode-btn" id="portionModePcs" type="button">kpl</button>
           </div>
+
+          <!-- Gramma-tila -->
+          <div id="portionGramsSection">
+            <label style="margin-top:10px;display:block;font-size:0.78rem;color:var(--text-muted);font-weight:500;">Määrä (g)</label>
+            <div class="portion-input-row">
+              <input type="number" id="portionAmount" value="100" min="1" max="5000" step="10" />
+              <span>g</span>
+            </div>
+          </div>
+
+          <!-- Kappaletila -->
+          <div id="portionPcsSection" style="display:none;">
+            <div class="portion-pcs-row">
+              <div class="portion-pcs-field">
+                <label>1 kpl paino</label>
+                <div class="portion-input-row">
+                  <input type="number" id="portionPcsWeight" value="60" min="1" max="2000" step="1" />
+                  <span>g</span>
+                </div>
+              </div>
+              <div class="portion-pcs-field">
+                <label>Kappalemäärä</label>
+                <div class="portion-input-row">
+                  <input type="number" id="portionPcsCount" value="1" min="1" max="100" step="1" />
+                  <span>kpl</span>
+                </div>
+              </div>
+            </div>
+            <div class="portion-pcs-total" id="portionPcsTotal">= 60 g</div>
+          </div>
+
           <div class="portion-preview" id="portionPreview"></div>
           <button class="btn-save full-width" id="confirmPortionBtn">Lisää aterialle</button>
         </div>

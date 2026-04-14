@@ -2,6 +2,32 @@
    HYVINVOINTISOVELLUS — app.js
    ============================================================= */
 
+// ─────────────────────────────────────────────────────────────
+// appConfirm — replaces browser confirm() which is blocked in
+// some HTTPS/iframe contexts (e.g. GitHub Pages)
+// ─────────────────────────────────────────────────────────────
+function appConfirm(msg) {
+  return new Promise(resolve => {
+    document.getElementById('confirmModalMsg').textContent = msg;
+    document.getElementById('confirmModal').classList.add('active');
+
+    function cleanup() {
+      document.getElementById('confirmModal').classList.remove('active');
+      document.getElementById('confirmModalYes').removeEventListener('click', onYes);
+      document.getElementById('confirmModalNo').removeEventListener('click', onNo);
+      document.getElementById('confirmModal').removeEventListener('click', onOverlay);
+    }
+    function onYes()     { cleanup(); resolve(true); }
+    function onNo()      { cleanup(); resolve(false); }
+    function onOverlay(e){ if (e.target === document.getElementById('confirmModal')) { cleanup(); resolve(false); } }
+
+    document.getElementById('confirmModalYes').addEventListener('click', onYes);
+    document.getElementById('confirmModalNo').addEventListener('click', onNo);
+    document.getElementById('confirmModal').addEventListener('click', onOverlay);
+  });
+}
+
+
 // ─────────────────────────────────────────────
 // APP NAV
 // ─────────────────────────────────────────────
@@ -197,9 +223,9 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
       li.querySelector('.food-item-info-btn').addEventListener('click', e => { e.stopPropagation(); openFoodInfo(f); });
       li.querySelector('.food-item-edit').addEventListener('click', e => { e.stopPropagation(); openEditFood(f); });
       li.querySelector('.food-item-add').addEventListener('click',  e => { e.stopPropagation(); openPortion(f); });
-      li.querySelector('.food-item-del').addEventListener('click',  e => {
+      li.querySelector('.food-item-del').addEventListener('click', async e => {
         e.stopPropagation();
-        if (confirm(`Poistetaanko ${f.nimi}?`)) { foods = foods.filter(x => x.id !== f.id); saveFoods(); renderFoods(); updateCategoryFilter(); }
+        if (await appConfirm(`Poistetaanko ${f.nimi}?`)) { foods = foods.filter(x => x.id !== f.id); saveFoods(); renderFoods(); updateCategoryFilter(); }
       });
       li.addEventListener('click', () => openPortion(f));
       foodListEl.appendChild(li);
@@ -544,8 +570,8 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
   }
 
   // ── Clear ───────────────────────────────────────────────────
-  document.getElementById('clearBtn').addEventListener('click', () => {
-    if (!confirm('Tyhjennetäänkö päivän ateriat?')) return;
+  document.getElementById('clearBtn').addEventListener('click', async () => {
+    if (!await appConfirm('Tyhjennetäänkö päivän ateriat?')) return;
     getLog(currentDate).meals = [];
     saveLogs(); renderMeals(); renderSummary();
     if (calOpen) renderCalendar();
@@ -605,13 +631,13 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
   document.getElementById('restoreInput').addEventListener('change', e => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       try {
         const imported = JSON.parse(ev.target.result);
         if (!Array.isArray(imported)) { alert('Virheellinen tiedosto.'); return; }
         // Normalisoidaan kentät — toimii sekä vanhalla (energia_kcal) että uudella formaatilla
         const normalized = imported.map(normalizeFood);
-        if (confirm(`Palautetaanko ${normalized.length} ruokaa? Nykyiset korvataan.`)) {
+        if (await appConfirm(`Palautetaanko ${normalized.length} ruokaa? Nykyiset korvataan.`)) {
           foods = normalized;
           saveFoods(); renderFoods(); updateCategoryFilter();
           showToast(`Palautettu ${normalized.length} ruokaa!`, 'success');
@@ -822,9 +848,9 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
         <button class="meal-template-add" title="Lisää aterialle" data-add-tmpl="${tmpl.id}">+</button>`;
 
       li.querySelector('[data-edit-tmpl]').addEventListener('click', e => { e.stopPropagation(); openEditTemplate(tmpl.id); });
-      li.querySelector('[data-del-tmpl]').addEventListener('click',  e => {
+      li.querySelector('[data-del-tmpl]').addEventListener('click', async e => {
         e.stopPropagation();
-        if (confirm(`Poistetaanko ateria "${tmpl.nimi}"?`)) {
+        if (await appConfirm(`Poistetaanko ateria "${tmpl.nimi}"?`)) {
           mealTemplates = mealTemplates.filter(t => t.id !== tmpl.id);
           saveTemplates(); renderMealTemplates();
         }
@@ -984,11 +1010,11 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
   document.getElementById('ateriatRestoreInput').addEventListener('change', e => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       try {
         const imp = JSON.parse(ev.target.result);
         if (!Array.isArray(imp)) { alert('Virheellinen tiedosto.'); return; }
-        if (confirm(`Palautetaanko ${imp.length} ateriaa?`)) {
+        if (await appConfirm(`Palautetaanko ${imp.length} ateriaa?`)) {
           mealTemplates = imp; saveTemplates(); renderMealTemplates();
           showToast('Ateriat palautettu!', 'success');
         }
@@ -1252,8 +1278,8 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
           <button class="tj-btn-icon danger" data-del="${ex.id}">✕</button>
         </div>`;
       el.querySelector('[data-edit]').addEventListener('click', () => openEditEx(ex.id));
-      el.querySelector('[data-del]').addEventListener('click', () => {
-        if (confirm(`Poistetaanko "${ex.name}"?`)) { st.exercises=st.exercises.filter(e=>e.id!==ex.id); save(); renderExercises(); }
+      el.querySelector('[data-del]').addEventListener('click', async () => {
+        if (await appConfirm(`Poistetaanko "${ex.name}"?`)) { st.exercises=st.exercises.filter(e=>e.id!==ex.id); save(); renderExercises(); }
       });
       con.appendChild(el);
     });
@@ -1305,7 +1331,7 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
           <button class="tj-program-load-btn" data-lp="${prog.id}">↓ Lataa treeniin</button>
         </div>`;
       el.querySelector('[data-ep]').addEventListener('click', () => openEditProgram(prog.id));
-      el.querySelector('[data-dp]').addEventListener('click', () => { if(confirm(`Poistetaanko "${prog.name}"?`)){st.programs=st.programs.filter(p=>p.id!==prog.id);save();renderPrograms();} });
+      el.querySelector('[data-dp]').addEventListener('click', async () => { if(await appConfirm(`Poistetaanko "${prog.name}"?`)){st.programs=st.programs.filter(p=>p.id!==prog.id);save();renderPrograms();} });
       el.querySelector('[data-lp]').addEventListener('click', () => loadProgram(prog.id));
       con.appendChild(el);
     });
@@ -1561,14 +1587,14 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
     openTjModal('tj-modal-history-detail');
   }
 
-  document.getElementById('tj-btn-delete-workout').addEventListener('click', () => {
+  document.getElementById('tj-btn-delete-workout').addEventListener('click', async () => {
     if (!viewingWorkoutId) return;
-    if (confirm('Poistetaanko treeni?')) { st.history=st.history.filter(w=>w.id!==viewingWorkoutId); save(); renderHistory(); closeTjModal('tj-modal-history-detail'); }
+    if (await appConfirm('Poistetaanko treeni?')) { st.history=st.history.filter(w=>w.id!==viewingWorkoutId); save(); renderHistory(); closeTjModal('tj-modal-history-detail'); }
   });
 
-  document.getElementById('tj-btn-clear-history').addEventListener('click', () => {
+  document.getElementById('tj-btn-clear-history').addEventListener('click', async () => {
     if (!st.history.length) return;
-    if (confirm('Tyhjennetäänkö koko historia?')) { st.history=[]; save(); renderHistory(); }
+    if (await appConfirm('Tyhjennetäänkö koko historia?')) { st.history=[]; save(); renderHistory(); }
   });
 
   // ── Backup / Restore ───────────────────────────────────────
@@ -1579,16 +1605,26 @@ document.querySelectorAll('.app-nav-btn').forEach(btn => {
   });
   document.getElementById('tjRestoreInput').addEventListener('change', e => {
     const file=e.target.files[0]; if(!file) return;
-    const reader=new FileReader(); reader.onload=ev=>{
+    const reader=new FileReader(); reader.onload=async ev=>{
       try {
         const imp=JSON.parse(ev.target.result);
         if(!imp.bars||!imp.exercises){alert('Virheellinen tiedosto.');return;}
         if(!imp.programs) imp.programs=[];
-        if(confirm('Palautetaanko varmuuskopio?')){st=imp;save();renderAll();alert('Palautettu!');}
+        if(await appConfirm('Palautetaanko varmuuskopio?')){st=imp;save();renderAll();showToastTj('Palautettu!');}
       } catch {alert('Lukeminen epäonnistui.');}
       e.target.value='';
     }; reader.readAsText(file);
   });
+
+  // ── Toast helper for treeni section ───────────────────────
+  function showToastTj(msg) {
+    // reuse ravintolaskuri toast element
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'toast success show';
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
 
   // ── Modal helpers ──────────────────────────────────────────
   function openTjModal(id)  { document.getElementById(id).classList.add('active'); }

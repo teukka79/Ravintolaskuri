@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fi">
 <head>
   <meta charset="UTF-8" />
@@ -568,6 +568,19 @@
     </div>
 
   </div><!-- /app-treeni -->
+
+  <!-- Global confirm modal — replaces browser confirm() which may be blocked -->
+  <div class="modal-overlay" id="confirmModal" style="z-index:9999;">
+    <div class="modal modal-small" style="max-width:340px;">
+      <div class="modal-header" style="border-bottom:none;padding-bottom:8px;">
+        <h3 id="confirmModalMsg" style="font-size:1rem;line-height:1.4;"></h3>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 1.25rem 1.25rem;">
+        <button class="btn-cancel" id="confirmModalNo">Peruuta</button>
+        <button class="btn-save" id="confirmModalYes" style="flex:none;padding:10px 22px;">OK</button>
+      </div>
+    </div>
+  </div>
 
   <script src="nutrients.js"></script>
   <script src="app.js"></script>
